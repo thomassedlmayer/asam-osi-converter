@@ -10,8 +10,8 @@ import {
   type Vector3,
 } from "@foxglove/schemas";
 import { Time } from "@foxglove/schemas/schemas/typescript/Time";
-import { ExtensionContext } from "@lichtblick/suite";
-import { eulerToQuaternion } from "@utils/geometry";
+import { ExtensionContext, PanelSettings, SettingsTreeField, SettingsTreeNode } from "@lichtblick/suite";
+import { eulerToQuaternion, quaternionMultiplication } from "@utils/geometry";
 import { ColorCode } from "@utils/helper";
 import {
   pointListToLinePrimitive,
@@ -77,6 +77,37 @@ function buildObjectEntity(
     color,
   );
 
+  const SHAFT_LENGTH = 0.154;
+  const SHAFT_DIAMETER = 0.02;
+  const HEAD_LENGTH = 0.046;
+  const HEAD_DIAMETER = 0.05;
+  const SCALE = 2.0;
+
+  function buildAxisArrow(axis_color: Color, orientation: Vector3 = { x: 0, y: 0, z: 0 }) {
+    const baseOrientation = eulerToQuaternion(
+      osiObject.base.orientation.roll,
+      osiObject.base.orientation.pitch,
+      osiObject.base.orientation.yaw,
+    );
+    const localAxisOrientation = eulerToQuaternion(orientation.x, orientation.y, orientation.z);
+    const globalAxisOrientation = quaternionMultiplication(baseOrientation, localAxisOrientation);
+    return {
+      pose: {
+        position: {
+          x: osiObject.base.position.x,
+          y: osiObject.base.position.y,
+          z: osiObject.base.position.z,
+        },
+        orientation: globalAxisOrientation,
+      },
+      shaft_length: SHAFT_LENGTH * SCALE,
+      shaft_diameter: SHAFT_DIAMETER * SCALE,
+      head_length: HEAD_LENGTH * SCALE,
+      head_diameter: HEAD_DIAMETER * SCALE,
+      color: axis_color,
+    };
+  }
+
   return {
     timestamp: time,
     frame_id,
@@ -84,6 +115,11 @@ function buildObjectEntity(
     lifetime: { sec: 0, nsec: 0 },
     frame_locked: true,
     cubes: [cube],
+    arrows: [
+      buildAxisArrow(ColorCode("r", 1), { x: 0, y: 0, z: 0 }),
+      buildAxisArrow(ColorCode("g", 1), { x: 0, y: 0, z: Math.PI / 2 }),
+      buildAxisArrow(ColorCode("b", 1), { x: 0, y: -Math.PI / 2, z: 0 }),
+    ],
     metadata,
   };
 }
@@ -531,10 +567,71 @@ export function activate(extensionContext: ExtensionContext): void {
     return transforms;
   };
 
+  interface GroundTruthSettings {
+    showAxes: boolean;
+    test: string;
+  }
+
+  const gtSettingsConfig: GroundTruthSettings = {
+    showAxes: true,
+    test: "test",
+  };
+
+  const buildSettingsTree = (config?: GroundTruthSettings): (() => SettingsTreeNode) => {
+    console.log("buildSettingsTree");
+    return () => {
+      console.log(config);
+      const settingsTreeField: SettingsTreeField = {
+        input: "boolean",
+        value: true,
+        label: "Show Axes",
+      };
+      const miscRoot: SettingsTreeNode = {
+        label: "Misc",
+        fields: {
+          field1: settingsTreeField,
+        },
+      };
+      return miscRoot;
+    };
+  };
+
+  const panelSettings: PanelSettings<unknown> = {
+    settings: buildSettingsTree(gtSettingsConfig),
+    handler: () => {
+      console.log("New settings received:");
+    },
+  };
+
+  const examplePanelSettings: PanelSettings<GroundTruthSettings> = {
+    settings: (config) => ({
+      fields: {
+        exampleField: {
+          input: "string",
+          value: config?.test,
+          label: "Example Field",
+          placeholder: "Enter text here",
+        },
+      },
+    }),
+    handler: (action, config) => {
+      if (action.action === "update" && action.payload.input === "string") {
+        config!.test = action.payload.value!;
+      }
+    },
+    defaultConfig: {
+      showAxes: true,
+      test: "",
+    },
+  };
+
   extensionContext.registerMessageConverter({
     fromSchemaName: "osi3.GroundTruth",
     toSchemaName: "foxglove.SceneUpdate",
     converter: convertGrountTruthToSceneUpdate,
+    panelSettings: {
+      gtSettings: panelSettings,
+    },
   });
 
   extensionContext.registerMessageConverter({
@@ -542,6 +639,9 @@ export function activate(extensionContext: ExtensionContext): void {
     toSchemaName: "foxglove.SceneUpdate",
     converter: (osiSensorView: SensorView) =>
       convertGrountTruthToSceneUpdate(osiSensorView.global_ground_truth!),
+    panelSettings: {
+      gtSettings: examplePanelSettings as PanelSettings<unknown>,
+    },
   });
 
   extensionContext.registerMessageConverter({
