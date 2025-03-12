@@ -1,5 +1,7 @@
 import {
   LineType,
+  SceneEntityDeletion,
+  SceneEntityDeletionType,
   SceneUpdate,
   TriangleListPrimitive,
   type Color,
@@ -34,7 +36,7 @@ import {
   Lane_Classification_Type,
   Lane_Classification_Subtype,
 } from "@lichtblick/asam-osi-types";
-import { ExtensionContext } from "@lichtblick/suite";
+import { ExtensionContext, Immutable, MessageEvent, PanelSettings } from "@lichtblick/suite";
 import { eulerToQuaternion } from "@utils/geometry";
 import { ColorCode } from "@utils/helper";
 import {
@@ -679,6 +681,15 @@ const hashLaneBoundaries = (laneBoundaries: LaneBoundary[]): string => {
   return hashValue.toString();
 };
 
+const generatePanelSettings = <T>(obj: PanelSettings<T>) => obj as PanelSettings<unknown>;
+
+enum DataTypes {
+  OPTION1,
+  OPTION2,
+}
+
+type Config = { shape: DataTypes };
+
 export function activate(extensionContext: ExtensionContext): void {
   preloadDynamicTextures();
 
@@ -688,8 +699,12 @@ export function activate(extensionContext: ExtensionContext): void {
 
   const convertGrountTruthToSceneUpdate = (
     osiGroundTruth: GroundTruth,
+    event: Immutable<MessageEvent<GroundTruth>>,
   ): DeepPartial<SceneUpdate> => {
+    const config = event.topicConfig as Config | undefined;
+    console.log(event);
     let sceneEntities: PartialSceneEntity[] = [];
+    let deletions: SceneEntityDeletion[] = [];
     let updateFlags: OSISceneEntitesUpdate = {
       movingObjects: true,
       stationaryObjects: true,
@@ -760,6 +775,24 @@ export function activate(extensionContext: ExtensionContext): void {
 
       // Store scene entities for current OSI ground truth frame in cache
       groundTruthFrameCache.set(osiGroundTruth, sceneEntities);
+
+      if (config?.shape === DataTypes.OPTION1) {
+        console.log("OPTION1");
+        // try to delete all scene entities when OPTION1 is selected
+        deletions = sceneEntities.map((entity) => {
+          return {
+            timestamp: { sec: 0, nsec: 0 },
+            type: SceneEntityDeletionType.ALL,
+            id: entity.id,
+          };
+        });
+        sceneEntities = [];
+      } else if (config?.shape === DataTypes.OPTION2) {
+        console.log("OPTION2");
+      } else {
+        console.log("no option passed");
+      }
+      console.log(deletions);
     } catch (error) {
       console.error(
         "OsiGroundTruthVisualizer: Error during message conversion:\n%s\nSkipping message! (Input message not compatible?)",
@@ -768,7 +801,7 @@ export function activate(extensionContext: ExtensionContext): void {
     }
 
     return {
-      deletions: [],
+      deletions,
       entities: sceneEntities,
     };
   };
@@ -850,8 +883,38 @@ export function activate(extensionContext: ExtensionContext): void {
   extensionContext.registerMessageConverter({
     fromSchemaName: "osi3.SensorView",
     toSchemaName: "foxglove.SceneUpdate",
-    converter: (osiSensorView: SensorView) =>
-      convertGrountTruthToSceneUpdate(osiSensorView.global_ground_truth!),
+    converter: (osiSensorView: SensorView, event: Immutable<MessageEvent<SensorView>>) =>
+      convertGrountTruthToSceneUpdate(osiSensorView.global_ground_truth!, event),
+    panelSettings: {
+      "3D": generatePanelSettings({
+        settings: (config) => ({
+          fields: {
+            shape: {
+              label: "Options",
+              input: "select",
+              options: [
+                { label: "OPTION1", value: DataTypes.OPTION1 },
+                { label: "OPTION2", value: DataTypes.OPTION2 },
+              ],
+              value: config?.shape,
+            },
+          },
+        }),
+        handler: (action, config: Config | undefined) => {
+          console.log(action);
+          console.log("handler");
+          if (config == undefined) {
+            return;
+          }
+          if (action.action === "update" && action.payload.path[2] === "shape") {
+            config.shape = action.payload.value as DataTypes;
+          }
+        },
+        defaultConfig: {
+          shape: DataTypes.OPTION1,
+        },
+      }),
+    },
   });
 
   extensionContext.registerMessageConverter({
