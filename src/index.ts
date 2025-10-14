@@ -81,6 +81,7 @@ import {
   PREFIX_LOGICAL_LANE,
   PREFIX_LOGICAL_LANE_BOUNDARY,
 } from "./logical-lanes";
+import { initPanel } from "./panel/OSIPanel";
 import { buildTrafficLightMetadata, buildTrafficLightModel } from "./trafficlights";
 import { preloadDynamicTextures, buildTrafficSignModel } from "./trafficsigns";
 
@@ -1246,6 +1247,8 @@ export function activate(extensionContext: ExtensionContext): void {
   };
 
   const generatePanelSettings = <T>(obj: PanelSettings<T>) => obj as PanelSettings<unknown>;
+
+  extensionContext.registerPanel({ name: "OSIPanel", initPanel });
 
   extensionContext.registerMessageConverter({
     fromSchemaName: "osi3.GroundTruth",

@@ -36,6 +36,7 @@
     "@lichtblick/eslint-plugin": "^1.0.2",
     "@lichtblick/suite": "^1.5.0",
     "@types/jest": "^29.5.12",
+    "@types/lodash": "^4.17.20",
     "@types/react": "18.2.55",
     "@types/react-dom": "18.2.19",
     "@typescript-eslint/eslint-plugin": "6.21.0",
@@ -70,5 +71,8 @@
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
     }
+  },
+  "dependencies": {
+    "lodash": "^4.17.21"
   }
 }
