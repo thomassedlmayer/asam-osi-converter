@@ -955,6 +955,20 @@ function getDeletedEntities<T extends { id: { value: number } }>(
   }));
 }
 
+export interface ConversionError {
+  timestamp: number;
+  message: string;
+  stack?: string;
+}
+
+let reportErrorCallback: ((error: ConversionError) => void) | undefined;
+
+export const setErrorReporter = (
+  callback: ((error: ConversionError) => void) | undefined,
+): void => {
+  reportErrorCallback = callback;
+};
+
 export function activate(extensionContext: ExtensionContext): void {
   preloadDynamicTextures();
 
@@ -980,194 +994,207 @@ export function activate(extensionContext: ExtensionContext): void {
     osiGroundTruth: GroundTruth,
     event?: Immutable<MessageEvent<GroundTruth>>,
   ): DeepPartial<SceneUpdate> => {
-    let sceneEntities: PartialSceneEntity[] = [];
-    let updateFlags: OSISceneEntitesUpdate = {
-      movingObjects: true,
-      stationaryObjects: true,
-      trafficSigns: true,
-      trafficLights: true,
-      roadMarkings: true,
-      laneBoundaries: true,
-      logicalLaneBoundaries: true,
-      lanes: true,
-      logicalLanes: true,
-    };
-
-    const config = event?.topicConfig as Config | undefined;
-    if (config && config !== state.previousConfig) {
-      // Reset caches if configuration changed
-      laneBoundaryCache.clear();
-      laneCache.clear();
-      modelCache.clear();
-      groundTruthFrameCache = new WeakMap<GroundTruth, PartialSceneEntity[]>();
-    }
-    state.previousConfig = config;
-    const caching = config?.caching;
-
-    const osiGroundTruthReq = osiGroundTruth as DeepRequired<GroundTruth>;
-    const timestamp = osiTimestampToTime(osiGroundTruthReq.timestamp);
-
-    // Check OSI ground truth object deletions and store ids in state for next frame
-    const deletionsMovingObjects = getDeletedEntities(
-      osiGroundTruthReq.moving_object,
-      state.previousMovingObjectIds,
-      PREFIX_MOVING_OBJECT,
-      timestamp,
-    );
-    const deletionsStationaryObjects = getDeletedEntities(
-      osiGroundTruthReq.stationary_object,
-      state.previousStationaryObjectIds,
-      PREFIX_STATIONARY_OBJECT,
-      timestamp,
-    );
-    const deletionsTrafficSigns = getDeletedEntities(
-      osiGroundTruthReq.traffic_sign,
-      state.previousTrafficSignIds,
-      PREFIX_TRAFFIC_SIGN,
-      timestamp,
-    );
-    const deletionsTrafficLights = getDeletedEntities(
-      osiGroundTruthReq.traffic_light,
-      state.previousTrafficLightIds,
-      PREFIX_TRAFFIC_LIGHT,
-      timestamp,
-    );
-    const deletionsRoadMarkings = getDeletedEntities(
-      osiGroundTruthReq.road_marking,
-      state.previousRoadMarkingIds,
-      PREFIX_ROAD_MARKING,
-      timestamp,
-    );
-    const deletionsLaneBoundaries = getDeletedEntities(
-      config?.showPhysicalLanes === true ? osiGroundTruthReq.lane_boundary : [],
-      state.previousLaneBoundaryIds,
-      PREFIX_LANE_BOUNDARY,
-      timestamp,
-    );
-    const deletionsLogicalLaneBoundaries = getDeletedEntities(
-      config?.showLogicalLanes === true ? osiGroundTruthReq.logical_lane_boundary : [],
-      state.previousLogicalLaneBoundaryIds,
-      PREFIX_LOGICAL_LANE_BOUNDARY,
-      timestamp,
-    );
-    const deletionsLanes = getDeletedEntities(
-      config?.showPhysicalLanes === true ? osiGroundTruthReq.lane : [],
-      state.previousLaneIds,
-      PREFIX_LANE,
-      timestamp,
-    );
-    const deletionsLogicalLanes = getDeletedEntities(
-      config?.showLogicalLanes === true ? osiGroundTruthReq.logical_lane : [],
-      state.previousLogicalLaneIds,
-      PREFIX_LOGICAL_LANE,
-      timestamp,
-    );
-
-    const deletions = [
-      ...deletionsMovingObjects,
-      ...deletionsStationaryObjects,
-      ...deletionsTrafficSigns,
-      ...deletionsTrafficLights,
-      ...deletionsRoadMarkings,
-      ...deletionsLaneBoundaries,
-      ...deletionsLogicalLaneBoundaries,
-      ...deletionsLanes,
-      ...deletionsLogicalLanes,
-    ];
-
-    // Use cached scene entities if that exact OSI ground truth frame is cached
-    if (groundTruthFrameCache.has(osiGroundTruth)) {
-      return {
-        deletions,
-        entities: groundTruthFrameCache.get(osiGroundTruth),
-      };
-    }
-
-    // Build scene entities from OSI ground truth or re-use partially cached entities
     try {
-      let laneBoundaryHash: string | undefined;
-      let laneHash: string | undefined;
-      if (caching === true) {
-        // Check if lane boundary hash has changed
-        laneBoundaryHash = hashLaneBoundaries(osiGroundTruthReq.lane_boundary);
-        if (laneBoundaryCache.has(laneBoundaryHash)) {
-          sceneEntities = sceneEntities.concat(laneBoundaryCache.get(laneBoundaryHash)!);
-          updateFlags = { ...updateFlags, laneBoundaries: false };
-        }
+      let sceneEntities: PartialSceneEntity[] = [];
+      let updateFlags: OSISceneEntitesUpdate = {
+        movingObjects: true,
+        stationaryObjects: true,
+        trafficSigns: true,
+        trafficLights: true,
+        roadMarkings: true,
+        laneBoundaries: true,
+        logicalLaneBoundaries: true,
+        lanes: true,
+        logicalLanes: true,
+      };
 
-        // Check if lane hash has changed
-        laneHash = hashLanes(osiGroundTruthReq.lane);
-        if (laneCache.has(laneHash)) {
-          sceneEntities = sceneEntities.concat(laneCache.get(laneHash)!);
-          updateFlags = { ...updateFlags, lanes: false };
-        }
+      const config = event?.topicConfig as Config | undefined;
+      if (config && config !== state.previousConfig) {
+        // Reset caches if configuration changed
+        laneBoundaryCache.clear();
+        laneCache.clear();
+        modelCache.clear();
+        groundTruthFrameCache = new WeakMap<GroundTruth, PartialSceneEntity[]>();
       }
+      state.previousConfig = config;
+      const caching = config?.caching;
 
-      // Build scene entities from OSI ground truth for update flags set to true
-      const {
-        movingObjects,
-        stationaryObjects,
-        trafficSigns,
-        trafficLights,
-        roadMarkings,
-        laneBoundaries,
-        logicalLaneBoundaries,
-        lanes,
-        logicalLanes,
-      } = buildSceneEntities(osiGroundTruthReq, updateFlags, config, modelCache);
+      const osiGroundTruthReq = osiGroundTruth as DeepRequired<GroundTruth>;
+      const timestamp = osiTimestampToTime(osiGroundTruthReq.timestamp);
 
-      // Concatenate newly generated and cached scene entities
-      sceneEntities = [
-        ...sceneEntities, // contains cached scene entities already
-        ...movingObjects,
-        ...stationaryObjects,
-        ...trafficSigns,
-        ...trafficLights,
-        ...roadMarkings,
-        ...laneBoundaries,
-        ...logicalLaneBoundaries,
-        ...lanes,
-        ...logicalLanes,
+      // Check OSI ground truth object deletions and store ids in state for next frame
+      const deletionsMovingObjects = getDeletedEntities(
+        osiGroundTruthReq.moving_object,
+        state.previousMovingObjectIds,
+        PREFIX_MOVING_OBJECT,
+        timestamp,
+      );
+      const deletionsStationaryObjects = getDeletedEntities(
+        osiGroundTruthReq.stationary_object,
+        state.previousStationaryObjectIds,
+        PREFIX_STATIONARY_OBJECT,
+        timestamp,
+      );
+      const deletionsTrafficSigns = getDeletedEntities(
+        osiGroundTruthReq.traffic_sign,
+        state.previousTrafficSignIds,
+        PREFIX_TRAFFIC_SIGN,
+        timestamp,
+      );
+      const deletionsTrafficLights = getDeletedEntities(
+        osiGroundTruthReq.traffic_light,
+        state.previousTrafficLightIds,
+        PREFIX_TRAFFIC_LIGHT,
+        timestamp,
+      );
+      const deletionsRoadMarkings = getDeletedEntities(
+        osiGroundTruthReq.road_marking,
+        state.previousRoadMarkingIds,
+        PREFIX_ROAD_MARKING,
+        timestamp,
+      );
+      const deletionsLaneBoundaries = getDeletedEntities(
+        config?.showPhysicalLanes === true ? osiGroundTruthReq.lane_boundary : [],
+        state.previousLaneBoundaryIds,
+        PREFIX_LANE_BOUNDARY,
+        timestamp,
+      );
+      const deletionsLogicalLaneBoundaries = getDeletedEntities(
+        config?.showLogicalLanes === true ? osiGroundTruthReq.logical_lane_boundary : [],
+        state.previousLogicalLaneBoundaryIds,
+        PREFIX_LOGICAL_LANE_BOUNDARY,
+        timestamp,
+      );
+      const deletionsLanes = getDeletedEntities(
+        config?.showPhysicalLanes === true ? osiGroundTruthReq.lane : [],
+        state.previousLaneIds,
+        PREFIX_LANE,
+        timestamp,
+      );
+      const deletionsLogicalLanes = getDeletedEntities(
+        config?.showLogicalLanes === true ? osiGroundTruthReq.logical_lane : [],
+        state.previousLogicalLaneIds,
+        PREFIX_LOGICAL_LANE,
+        timestamp,
+      );
+
+      const deletions = [
+        ...deletionsMovingObjects,
+        ...deletionsStationaryObjects,
+        ...deletionsTrafficSigns,
+        ...deletionsTrafficLights,
+        ...deletionsRoadMarkings,
+        ...deletionsLaneBoundaries,
+        ...deletionsLogicalLaneBoundaries,
+        ...deletionsLanes,
+        ...deletionsLogicalLanes,
       ];
 
-      // Store lane boundaries in cache
-      if (caching === true && updateFlags.laneBoundaries && laneBoundaryHash) {
-        laneBoundaryCache.clear(); // keep only one lane boundary in cache
-        laneBoundaryCache.set(laneBoundaryHash, laneBoundaries);
+      // Use cached scene entities if that exact OSI ground truth frame is cached
+      if (groundTruthFrameCache.has(osiGroundTruth)) {
+        return {
+          deletions,
+          entities: groundTruthFrameCache.get(osiGroundTruth),
+        };
       }
 
-      // Store lanes in cache
-      if (caching === true && updateFlags.lanes && laneHash) {
-        laneCache.clear(); // keep only one lane in cache
-        laneCache.set(laneHash, lanes);
+      // Build scene entities from OSI ground truth or re-use partially cached entities
+      try {
+        let laneBoundaryHash: string | undefined;
+        let laneHash: string | undefined;
+        if (caching === true) {
+          // Check if lane boundary hash has changed
+          laneBoundaryHash = hashLaneBoundaries(osiGroundTruthReq.lane_boundary);
+          if (laneBoundaryCache.has(laneBoundaryHash)) {
+            sceneEntities = sceneEntities.concat(laneBoundaryCache.get(laneBoundaryHash)!);
+            updateFlags = { ...updateFlags, laneBoundaries: false };
+          }
+
+          // Check if lane hash has changed
+          laneHash = hashLanes(osiGroundTruthReq.lane);
+          if (laneCache.has(laneHash)) {
+            sceneEntities = sceneEntities.concat(laneCache.get(laneHash)!);
+            updateFlags = { ...updateFlags, lanes: false };
+          }
+        }
+
+        // Build scene entities from OSI ground truth for update flags set to true
+        const {
+          movingObjects,
+          stationaryObjects,
+          trafficSigns,
+          trafficLights,
+          roadMarkings,
+          laneBoundaries,
+          logicalLaneBoundaries,
+          lanes,
+          logicalLanes,
+        } = buildSceneEntities(osiGroundTruthReq, updateFlags, config, modelCache);
+
+        // Concatenate newly generated and cached scene entities
+        sceneEntities = [
+          ...sceneEntities, // contains cached scene entities already
+          ...movingObjects,
+          ...stationaryObjects,
+          ...trafficSigns,
+          ...trafficLights,
+          ...roadMarkings,
+          ...laneBoundaries,
+          ...logicalLaneBoundaries,
+          ...lanes,
+          ...logicalLanes,
+        ];
+
+        // Store lane boundaries in cache
+        if (caching === true && updateFlags.laneBoundaries && laneBoundaryHash) {
+          laneBoundaryCache.clear(); // keep only one lane boundary in cache
+          laneBoundaryCache.set(laneBoundaryHash, laneBoundaries);
+        }
+
+        // Store lanes in cache
+        if (caching === true && updateFlags.lanes && laneHash) {
+          laneCache.clear(); // keep only one lane in cache
+          laneCache.set(laneHash, lanes);
+        }
+
+        // Store scene entities for current OSI ground truth frame in cache
+        groundTruthFrameCache.set(osiGroundTruth, sceneEntities);
+      } catch (error) {
+        console.error(
+          "OsiGroundTruthVisualizer: Error during message conversion:\n%s\nSkipping message! (Input message not compatible?)",
+          error,
+        );
       }
 
-      // Store scene entities for current OSI ground truth frame in cache
-      groundTruthFrameCache.set(osiGroundTruth, sceneEntities);
+      return {
+        deletions,
+        entities: sceneEntities,
+      };
     } catch (error) {
-      console.error(
-        "OsiGroundTruthVisualizer: Error during message conversion:\n%s\nSkipping message! (Input message not compatible?)",
-        error,
-      );
+      const message = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack : undefined;
+      reportErrorCallback?.({ timestamp: Date.now(), message, stack });
+      return {
+        deletions: [],
+        entities: [],
+      };
     }
-
-    return {
-      deletions,
-      entities: sceneEntities,
-    };
   };
 
   const convertSensorDataToSceneUpdate = (osiSensorData: SensorData): DeepPartial<SceneUpdate> => {
     let sceneEntities: PartialSceneEntity[] = [];
 
     try {
+      throw Error("testError");
       sceneEntities = buildSensorDataSceneEntities(osiSensorData as DeepRequired<SensorData>);
-    } catch (error) {
-      console.error(
-        "OsiSensorDataVisualizer: Error during message conversion:\n%s\nSkipping message! (Input message not compatible?)",
-        error,
-      );
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack : undefined;
+
+      // Report error to panel if callback is set
+      reportErrorCallback?.({ timestamp: Date.now(), message, stack });
     }
+
     return {
       deletions: [],
       entities: sceneEntities,

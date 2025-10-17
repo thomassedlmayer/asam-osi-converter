@@ -7,18 +7,42 @@ import {
   SettingsTreeAction,
   SettingsTreeNode,
   SettingsTreeNodes,
+  Topic,
 } from "@lichtblick/suite";
 import { set } from "lodash";
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { DeepPartial } from "ts-essentials";
 
-type BlankPanelProps = {
+import { setErrorReporter, ConversionError } from "../index";
+
+type OSIPanelProps = {
   context: PanelExtensionContext;
 };
 
 type Config = {
   showLogo: boolean;
 };
+
+function renderMetadata(data: unknown, level = 0): JSX.Element[] {
+  if (data == null || typeof data !== "object") {
+    return [
+      <span key={String(data)} style={{ opacity: 0.8 }}>
+        {String(data)}
+      </span>,
+    ];
+  }
+
+  return Object.entries(data).map(([key, value]) => (
+    <div key={key} style={{ marginLeft: level * 16 }}>
+      <strong style={{ opacity: 0.9 }}>{key}:</strong>{" "}
+      {typeof value === "object" && value != null ? (
+        <div style={{ marginTop: 4 }}>{renderMetadata(value, level + 1)}</div>
+      ) : (
+        <span style={{ opacity: 0.8 }}>{String(value)}</span>
+      )}
+    </div>
+  ));
+}
 
 function buildSettingsTree(config: Config): SettingsTreeNodes {
   const general: SettingsTreeNode = {
@@ -34,8 +58,9 @@ function buildSettingsTree(config: Config): SettingsTreeNodes {
   return { general };
 }
 
-export default function OSIPanelElement({ context }: BlankPanelProps): JSX.Element {
+export default function OSIPanelElement({ context }: OSIPanelProps): JSX.Element {
   const { saveState } = context;
+  console.log(context);
 
   // resolve an initial config which may have some missing fields into a full config
   const [config, setConfig] = useState<Config>(() => {
@@ -48,6 +73,10 @@ export default function OSIPanelElement({ context }: BlankPanelProps): JSX.Eleme
     // no-op
   });
   const [colorScheme, setColorScheme] = useState<"dark" | "light">("light");
+  const [topics, setTopics] = useState<Topic[]>();
+  const [errors, setErrors] = useState<ConversionError[]>([]);
+
+  //console.log(topics);
 
   const settingsActionHandler = useCallback((action: SettingsTreeAction) => {
     if (action.action !== "update") {
@@ -64,16 +93,33 @@ export default function OSIPanelElement({ context }: BlankPanelProps): JSX.Eleme
 
   useLayoutEffect(() => {
     context.watch("colorScheme");
+    context.watch("topics");
+    context.watch("currentFrame");
 
     context.onRender = (renderState, done) => {
       setRenderDone(() => done);
+
       if (renderState.colorScheme) {
         setColorScheme(renderState.colorScheme);
+      }
+
+      if (renderState.topics) {
+        setTopics(renderState.topics as Topic[]);
+        console.log(renderState.topics);
       }
     };
   }, [context]);
 
   useEffect(() => {
+    setErrorReporter((error) => {
+      setErrors((prev) => [...prev, error]);
+    });
+
+    if (context.seekPlayback) {
+      context.seekPlayback(0.0);
+      console.log("Auto-seeked to 0.0 seconds on load");
+    }
+
     const tree = buildSettingsTree(config);
     context.updatePanelSettingsEditor({
       actionHandler: settingsActionHandler,
@@ -91,7 +137,7 @@ export default function OSIPanelElement({ context }: BlankPanelProps): JSX.Eleme
       style={{
         backgroundColor: colorScheme === "dark" ? "#15151A" : "#ffffff",
         color: "currentColor",
-        height: "100vh",
+        height: "100%",
         width: "100%",
         display: "flex",
         flexDirection: "column",
@@ -168,13 +214,118 @@ export default function OSIPanelElement({ context }: BlankPanelProps): JSX.Eleme
         style={{
           flex: 1,
           display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          color: colorScheme === "dark" ? "#fff" : "#15151A",
-          opacity: 0.8,
+          flexDirection: "column",
+          justifyContent: "flex-start",
+          alignItems: "stretch",
+          width: "100%",
+          padding: "16px",
+          boxSizing: "border-box",
+          overflowY: "auto",
+          gap: "16px",
         }}
       >
-        <p>Panel content</p>
+        {/* Metadata box */}
+        <div
+          style={{
+            border: "1px solid",
+            borderColor: colorScheme === "dark" ? "#2c2c33" : "#ddd",
+            borderRadius: "8px",
+            padding: "12px",
+            backgroundColor: colorScheme === "dark" ? "#1b1b20" : "#f9f9f9",
+            color: colorScheme === "dark" ? "#fff" : "#15151A",
+          }}
+        >
+          <h3 style={{ marginTop: 0, marginBottom: 8 }}>Metadata</h3>
+          {context.metadata ? (
+            <div style={{ fontFamily: "monospace", fontSize: "0.9rem" }}>
+              {renderMetadata(context.metadata)}
+            </div>
+          ) : (
+            <p style={{ opacity: 0.7, fontStyle: "italic" }}>No metadata available.</p>
+          )}
+        </div>
+
+        {/* Topics list */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            justifyContent: "flex-start",
+            width: "100%",
+            gap: "12px",
+          }}
+        >
+          {topics?.length === 0 ? (
+            <p
+              style={{
+                color: colorScheme === "dark" ? "#aaa" : "#333",
+                fontStyle: "italic",
+              }}
+            >
+              No topics available.
+            </p>
+          ) : (
+            topics?.map((topic) => (
+              <div
+                key={topic.name}
+                style={{
+                  border: "1px solid",
+                  borderColor: colorScheme === "dark" ? "#2c2c33" : "#ddd",
+                  borderRadius: "8px",
+                  padding: "12px",
+                  width: "100%",
+                  backgroundColor: colorScheme === "dark" ? "#1b1b20" : "#f9f9f9",
+                }}
+              >
+                <h3
+                  style={{
+                    margin: "0 0 4px 0",
+                    color: colorScheme === "dark" ? "#fff" : "#15151A",
+                  }}
+                >
+                  {topic.name}
+                </h3>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "0.9rem",
+                    opacity: 0.7,
+                  }}
+                >
+                  Schema: {topic.schemaName}
+                </p>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Error reporting */}
+        <div
+          style={{
+            border: "1px solid",
+            borderColor: colorScheme === "dark" ? "#2c2c33" : "#ddd",
+            borderRadius: "8px",
+            padding: "12px",
+            backgroundColor: colorScheme === "dark" ? "#1b1b20" : "#f9f9f9",
+            width: "100%",
+            color: colorScheme === "dark" ? "#fff" : "#15151A",
+          }}
+        >
+          <h2 style={{ marginTop: 0 }}>Error log</h2>
+
+          {errors.length > 0 && (
+            <div className="error-log">
+              <ul>
+                {errors.map((err, i) => (
+                  <li key={i}>
+                    <strong>{new Date(err.timestamp).toLocaleTimeString()}</strong>: {err.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
