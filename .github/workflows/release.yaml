@@ -21,6 +21,10 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.release.target_commitish }}
 
+      - name: Show loaded SSH key fingerprint
+        run: |
+          ssh-keygen -lf ~/.ssh/id_ed25519
+
       - name: Switch remote to SSH
         run: git remote set-url origin git@github.com:${{ github.repository }}.git
 
