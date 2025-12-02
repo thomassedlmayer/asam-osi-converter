@@ -1,15 +1,26 @@
 # Changelog
 
+## [v0.1.6](https://github.com/thomassedlmayer/asam-osi-converter/tree/v0.1.6) (2025-12-02)
+
+[Full Changelog](https://github.com/thomassedlmayer/asam-osi-converter/compare/v0.1.5...v0.1.6)
+
+**Implemented enhancements:**
+
+- feat: test changelog sections [\#16](https://github.com/thomassedlmayer/asam-osi-converter/pull/16) ([thomassedlmayer](https://github.com/thomassedlmayer))
+
 ## [v0.1.5](https://github.com/thomassedlmayer/asam-osi-converter/tree/v0.1.5) (2025-12-02)
 
 [Full Changelog](https://github.com/thomassedlmayer/asam-osi-converter/compare/v0.1.4...v0.1.5)
+
+**Fixed bugs:**
+
+- ci: add pr permission [\#8](https://github.com/thomassedlmayer/asam-osi-converter/pull/8) ([thomassedlmayer](https://github.com/thomassedlmayer))
 
 **Merged pull requests:**
 
 - ci: test [\#15](https://github.com/thomassedlmayer/asam-osi-converter/pull/15) ([thomassedlmayer](https://github.com/thomassedlmayer))
 - ci: deploy key [\#14](https://github.com/thomassedlmayer/asam-osi-converter/pull/14) ([thomassedlmayer](https://github.com/thomassedlmayer))
 - ci: approve in workflow [\#12](https://github.com/thomassedlmayer/asam-osi-converter/pull/12) ([thomassedlmayer](https://github.com/thomassedlmayer))
-- ci: add pr permission [\#8](https://github.com/thomassedlmayer/asam-osi-converter/pull/8) ([thomassedlmayer](https://github.com/thomassedlmayer))
 - ci: fix create pr [\#7](https://github.com/thomassedlmayer/asam-osi-converter/pull/7) ([thomassedlmayer](https://github.com/thomassedlmayer))
 
 ## [v0.1.4](https://github.com/thomassedlmayer/asam-osi-converter/tree/v0.1.4) (2025-12-02)
