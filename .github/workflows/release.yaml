@@ -16,6 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          persist-credentials: false
           ssh-key: ${{secrets.DEPLOY_KEY}}
           fetch-depth: 0
           ref: ${{ github.event.release.target_commitish }}
