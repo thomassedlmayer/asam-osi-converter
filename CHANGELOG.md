@@ -1,5 +1,38 @@
 # Changelog
 
+## [v0.1.5](https://github.com/thomassedlmayer/asam-osi-converter/tree/v0.1.5) (2025-12-02)
+
+[Full Changelog](https://github.com/thomassedlmayer/asam-osi-converter/compare/v0.1.4...v0.1.5)
+
+**Merged pull requests:**
+
+- ci: add pr permission [\#8](https://github.com/thomassedlmayer/asam-osi-converter/pull/8) ([thomassedlmayer](https://github.com/thomassedlmayer))
+- ci: fix create pr [\#7](https://github.com/thomassedlmayer/asam-osi-converter/pull/7) ([thomassedlmayer](https://github.com/thomassedlmayer))
+
+## [v0.1.4](https://github.com/thomassedlmayer/asam-osi-converter/tree/v0.1.4) (2025-12-02)
+
+[Full Changelog](https://github.com/thomassedlmayer/asam-osi-converter/compare/v0.1.3...v0.1.4)
+
+**Merged pull requests:**
+
+- ci: auto merge changelog pr [\#6](https://github.com/thomassedlmayer/asam-osi-converter/pull/6) ([thomassedlmayer](https://github.com/thomassedlmayer))
+
+## [v0.1.3](https://github.com/thomassedlmayer/asam-osi-converter/tree/v0.1.3) (2025-12-02)
+
+[Full Changelog](https://github.com/thomassedlmayer/asam-osi-converter/compare/v0.1.2...v0.1.3)
+
+**Merged pull requests:**
+
+- ci: test [\#5](https://github.com/thomassedlmayer/asam-osi-converter/pull/5) ([thomassedlmayer](https://github.com/thomassedlmayer))
+
+## [v0.1.2](https://github.com/thomassedlmayer/asam-osi-converter/tree/v0.1.2) (2025-12-02)
+
+[Full Changelog](https://github.com/thomassedlmayer/asam-osi-converter/compare/v0.1.1...v0.1.2)
+
+**Merged pull requests:**
+
+- feat: test [\#4](https://github.com/thomassedlmayer/asam-osi-converter/pull/4) ([thomassedlmayer](https://github.com/thomassedlmayer))
+
 ## [v0.1.1](https://github.com/thomassedlmayer/asam-osi-converter/tree/v0.1.1) (2025-12-01)
 
 [Full Changelog](https://github.com/thomassedlmayer/asam-osi-converter/compare/v0.1.0...v0.1.1)
