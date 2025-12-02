@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.1.7](https://github.com/thomassedlmayer/asam-osi-converter/tree/v0.1.7) (2025-12-02)
+
+[Full Changelog](https://github.com/thomassedlmayer/asam-osi-converter/compare/v0.1.6...v0.1.7)
+
 ## [v0.1.6](https://github.com/thomassedlmayer/asam-osi-converter/tree/v0.1.6) (2025-12-02)
 
 [Full Changelog](https://github.com/thomassedlmayer/asam-osi-converter/compare/v0.1.5...v0.1.6)
