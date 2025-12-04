@@ -1,8 +1,8 @@
 name: release
 
 on:
-  release:
-    types: [published]
+  push:
+    tags: ["v[0-9].[0-9]+.[0-9]+"]
 
 jobs:
   changelog:
@@ -20,7 +20,7 @@ jobs:
         with:
           token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
-          ref: ${{ github.event.release.target_commitish }}
+          ref: ${{ github.ref }}
 
       - name: Generate changelog for this release
         id: changelog
@@ -34,7 +34,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add CHANGELOG.md
-          git commit -m "docs: update CHANGELOG for ${{ github.event.release.tag_name }}" || echo "No changes to commit"
+          git commit -m "docs: update CHANGELOG for ${{ github.ref_name }}" || echo "No changes to commit"
           git push origin main || echo "Nothing to push"
 
       - name: Set up Node.js
@@ -64,16 +64,29 @@ jobs:
       #    cd scancode-toolkit
       #    ./scancode --json-pp ../scancode-result.json ../
 
-      - name: Prepare release artifacts
-        run: |
-          mkdir -p release
-          cp CHANGELOG.md release/
-          cp lichtblick.asam-osi-converter-*.foxe release/
-
-      - name: Upload deliverables
-        uses: svenstaro/upload-release-action@v2
+      - name: Create GitHub Release
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        id: create_release
+        uses: "plu5/automatic-releases-with-sha-action@main"
         with:
-          file: release/*
-          file_glob: true
-          tag: ${{ github.event.release.tag_name }}
-          overwrite: true
+          repo_token: "${{ secrets.PAT_TOKEN }}"
+          prerelease: false
+          title: ASAM OSI Converter ${{ github.ref_name }}
+          files: |
+            CHANGELOG.md
+            scancode-result.json
+            lichtblick.asam-osi-converter-${{ github.ref_name }}.foxe
+
+      #- name: Prepare release artifacts
+      #  run: |
+      #    mkdir -p release
+      #    cp CHANGELOG.md release/
+      #    cp lichtblick.asam-osi-converter-*.foxe release/
+
+      #- name: Upload deliverables
+      #  uses: svenstaro/upload-release-action@v2
+      #  with:
+      #    file: release/*
+      #    file_glob: true
+      #    tag: ${{ github.event.release.tag_name }}
+      #    overwrite: true
