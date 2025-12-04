@@ -75,7 +75,7 @@ jobs:
           files: |
             CHANGELOG.md
             scancode-result.json
-            lichtblick.asam-osi-converter-${{ github.ref_name }}.foxe
+            lichtblick.asam-osi-converter-${{ github.ref_name#v }}.foxe
 
       #- name: Prepare release artifacts
       #  run: |
