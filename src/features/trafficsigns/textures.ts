@@ -44,7 +44,7 @@ export const drawTrafficSignText = (
   const ctx = canvas.getContext("2d")!;
 
   ctx.drawImage(imageElement, 0, 0);
-  ctx.font = options.font ?? `bold ${canvas.width * 0.6}px sans-serif`;
+  ctx.font = options.font ?? `bold ${(canvas.width * 0.6).toString()}px sans-serif`;
   ctx.textAlign = options.textAlign ?? "center";
   ctx.textBaseline = options.textBaseline ?? "middle";
   ctx.fillStyle = options.fillStyle ?? "black";

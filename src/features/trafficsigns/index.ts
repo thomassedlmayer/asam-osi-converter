@@ -149,7 +149,7 @@ const getTextureMapKey = (
     | TrafficSign_SupplementarySign_Classification,
 ): string => {
   const tsValue = classification.value as DeepRequired<TrafficSignValue>;
-  return `${classification.type}|${tsValue.value.toString()}`;
+  return `${classification.type?.toString() ?? ""}|${tsValue.value.toString()}`;
 };
 
 const getImage = (file: string): HTMLImageElement => {

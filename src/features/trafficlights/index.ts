@@ -153,7 +153,7 @@ export const getModelCacheKey = (
   classification: TrafficLight_Classification,
   time: Time,
 ): string => {
-  let outputKey = `${classification.icon}|${classification.color}|${classification.mode}`;
+  let outputKey = `${classification.icon?.toString() ?? ""}|${classification.color?.toString() ?? ""}|${classification.mode?.toString() ?? ""}`;
   if (classification.mode === TrafficLight_Classification_Mode.FLASHING) {
     outputKey += `_${computeFlashState(time)}`;
   }

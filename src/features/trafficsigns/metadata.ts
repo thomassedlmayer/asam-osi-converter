@@ -22,7 +22,7 @@ export function buildTrafficSignMetadata(obj: DeepRequired<TrafficSign>): KeyVal
   if (obj.main_sign?.classification?.value != null) {
     metadata.push({
       key: "value",
-      value: `${obj.main_sign.classification.value.value} ${TrafficSignValue_Unit[obj.main_sign.classification.value.value_unit]} ${obj.main_sign.classification.value.text}`,
+      value: `${obj.main_sign.classification.value.value.toString()} ${TrafficSignValue_Unit[obj.main_sign.classification.value.value_unit]} ${obj.main_sign.classification.value.text}`,
     });
   }
   if (obj.main_sign.classification.code) {

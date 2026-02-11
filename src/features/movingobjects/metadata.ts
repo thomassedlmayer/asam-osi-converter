@@ -20,7 +20,7 @@ export function buildMovingObjectMetadata(
   if (moving_object.base.velocity != null) {
     metadata.push({
       key: "velocity",
-      value: `${moving_object.base.velocity.x}, ${moving_object.base.velocity.y}, ${moving_object.base.velocity.z}`,
+      value: `${moving_object.base.velocity.x.toString()}, ${moving_object.base.velocity.y.toString()}, ${moving_object.base.velocity.z.toString()}`,
     });
   }
 
@@ -28,7 +28,7 @@ export function buildMovingObjectMetadata(
   if (moving_object.base.acceleration != null) {
     metadata.push({
       key: "acceleration",
-      value: `${moving_object.base.acceleration.x}, ${moving_object.base.acceleration.y}, ${moving_object.base.acceleration.z}`,
+      value: `${moving_object.base.acceleration.x.toString()}, ${moving_object.base.acceleration.y.toString()}, ${moving_object.base.acceleration.z.toString()}`,
     });
   }
 

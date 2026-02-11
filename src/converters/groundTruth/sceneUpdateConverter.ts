@@ -69,7 +69,7 @@ function buildSceneEntities(
   const movingObjectSceneEntities = osiGroundTruth.moving_object.map((obj) => {
     let entity;
 
-    const modelPathKey = panelSettings?.defaultModelPath + obj.model_reference;
+    const modelPathKey = (panelSettings?.defaultModelPath ?? "") + obj.model_reference;
     if (
       !modelCache.has(modelPathKey) &&
       obj.model_reference.length !== 0 &&
@@ -154,7 +154,7 @@ function buildSceneEntities(
 
   // Lane boundaries
   let laneBoundarySceneEntities: PartialSceneEntity[] = [];
-  if (updateFlags.laneBoundaries && panelSettings != undefined && panelSettings.showPhysicalLanes) {
+  if (updateFlags.laneBoundaries && panelSettings?.showPhysicalLanes) {
     laneBoundarySceneEntities = osiGroundTruth.lane_boundary.map((lane_boundary) => {
       return buildLaneBoundaryEntity(lane_boundary, OSI_GLOBAL_FRAME, time);
     });
@@ -162,7 +162,7 @@ function buildSceneEntities(
 
   // Lanes
   let laneSceneEntities: PartialSceneEntity[] = [];
-  if (updateFlags.lanes && panelSettings != undefined && panelSettings.showPhysicalLanes) {
+  if (updateFlags.lanes && panelSettings?.showPhysicalLanes) {
     // Re-generate lanes only when update.lanes is true
     laneSceneEntities = osiGroundTruth.lane.map((lane) => {
       const rightLaneBoundaryIds = lane.classification.right_lane_boundary_id.map((id) => id.value);
@@ -179,11 +179,7 @@ function buildSceneEntities(
 
   // Logical lane boundaries
   let logicalLaneBoundarySceneEntities: PartialSceneEntity[] = [];
-  if (
-    updateFlags.logicalLaneBoundaries &&
-    panelSettings != undefined &&
-    panelSettings.showLogicalLanes
-  ) {
+  if (updateFlags.logicalLaneBoundaries && panelSettings?.showLogicalLanes) {
     logicalLaneBoundarySceneEntities = osiGroundTruth.logical_lane_boundary.map((lane_boundary) => {
       return buildLogicalLaneBoundaryEntity(lane_boundary, OSI_GLOBAL_FRAME, time);
     });
@@ -191,7 +187,7 @@ function buildSceneEntities(
 
   // Logical lanes
   let logicalLaneSceneEntities: PartialSceneEntity[] = [];
-  if (updateFlags.logicalLanes && panelSettings != undefined && panelSettings.showLogicalLanes) {
+  if (updateFlags.logicalLanes && panelSettings?.showLogicalLanes) {
     logicalLaneSceneEntities = osiGroundTruth.logical_lane.map((logical_lane) => {
       const rightLaneBoundaryIds = logical_lane.right_boundary_id.map((id) => id.value);
       const leftLaneBoundaryIds = logical_lane.left_boundary_id.map((id) => id.value);
@@ -213,7 +209,7 @@ function buildSceneEntities(
   }
 
   let referenceLineSceneEntities: PartialSceneEntity[] = [];
-  if (panelSettings != undefined && panelSettings.showReferenceLines) {
+  if (panelSettings?.showReferenceLines) {
     referenceLineSceneEntities = osiGroundTruth.reference_line.map((reference_line) => {
       return buildReferenceLineEntity(
         reference_line,

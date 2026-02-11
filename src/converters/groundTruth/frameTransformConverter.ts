@@ -21,10 +21,7 @@ export const convertGroundTruthToFrameTransforms = (message: GroundTruth): Frame
     }
 
     // Return empty FrameTransforms if host vehicle is not contained in moving objects
-    if (
-      message.moving_object &&
-      message.moving_object.some((obj) => obj.id?.value === message.host_vehicle_id?.value)
-    ) {
+    if (message.moving_object?.some((obj) => obj.id?.value === message.host_vehicle_id?.value)) {
       transforms.transforms.push(
         buildEgoVehicleBBCenterFrameTransform(message as DeepRequired<GroundTruth>),
       );

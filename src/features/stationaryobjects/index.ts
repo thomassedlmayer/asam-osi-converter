@@ -63,7 +63,7 @@ export function buildStationaryObjectEntity(
   }
 
   function getUpdatedModelPrimitives(): ModelPrimitive[] {
-    if (config != null && config.show3dModels) {
+    if (config?.show3dModels) {
       const model_path = config.defaultModelPath + osiObject.model_reference;
       const model_primitive = modelCache.get(model_path);
       if (model_primitive == undefined) {
@@ -95,7 +95,7 @@ export function buildStationaryObjectEntity(
     id: generateSceneEntityId(id_prefix, osiObject.id.value),
     lifetime: { sec: 0, nsec: 0 },
     frame_locked: true,
-    cubes: config != null && config.showBoundingBox ? [cube] : [],
+    cubes: config?.showBoundingBox ? [cube] : [],
     arrows: buildAxes(),
     metadata,
     models: getUpdatedModelPrimitives(),

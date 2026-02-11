@@ -40,8 +40,8 @@ export function buildLaneMetadata(lane: DeepRequired<Lane>): KeyValuePair[] {
       value: lane.classification.lane_pairing
         .map(
           (pair) =>
-            // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions, @typescript-eslint/no-unnecessary-condition
-            `(${pair.antecessor_lane_id ? pair.antecessor_lane_id.value : ""}, ${pair.successor_lane_id ? pair.successor_lane_id.value : ""})`,
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            `(${pair.antecessor_lane_id ? pair.antecessor_lane_id.value.toString() : ""}, ${pair.successor_lane_id ? pair.successor_lane_id.value.toString() : ""})`,
         )
         .join(", "),
     },

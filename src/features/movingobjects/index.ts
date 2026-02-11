@@ -106,7 +106,7 @@ export function buildMovingObjectEntity(
   }
 
   function getUpdatedModelPrimitives(): ModelPrimitive[] {
-    if (config != null && config.show3dModels) {
+    if (config?.show3dModels) {
       const model_path = config.defaultModelPath + osiObject.model_reference;
       const model_primitive = modelCache.get(model_path);
       if (model_primitive == undefined) {
@@ -138,7 +138,7 @@ export function buildMovingObjectEntity(
     id: generateSceneEntityId(id_prefix, osiObject.id.value),
     lifetime: { sec: 0, nsec: 0 },
     frame_locked: true,
-    cubes: config != null && config.showBoundingBox ? [cube, ...buildVehicleLights()] : [],
+    cubes: config?.showBoundingBox ? [cube, ...buildVehicleLights()] : [],
     arrows: buildAxes(),
     metadata,
     models: getUpdatedModelPrimitives(),
