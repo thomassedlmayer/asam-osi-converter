@@ -10,8 +10,12 @@ import {
 import { preloadDynamicTextures } from "@features/trafficsigns";
 import { ExtensionContext } from "@lichtblick/suite";
 
+import { initPanel } from "./panel/OSIPanel";
+
 export function activate(extensionContext: ExtensionContext): void {
   preloadDynamicTextures();
+
+  extensionContext.registerPanel({ name: "OSIPanel", initPanel });
 
   const groundTruthConverter = registerGroundTruthConverter();
   extensionContext.registerMessageConverter({
