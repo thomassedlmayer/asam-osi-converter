@@ -2,13 +2,13 @@ import { PanelExtensionContext } from "@lichtblick/suite";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import OSIPanelElement from "./OSIPanelElement";
+import MetadataPanelElement from "./MetadataPanelElement";
 
 export function initPanel(context: PanelExtensionContext): void {
   const root = createRoot(context.panelElement);
   root.render(
     <StrictMode>
-      <OSIPanelElement context={context} />
+      <MetadataPanelElement context={context} />
     </StrictMode>,
   );
 }
